@@ -1689,12 +1689,12 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     >>> x = rng.normal(scale=np.sqrt(noise_power), size=time.shape)
     >>> x += np.sin(2*np.pi*freq_carrier*time)*np.sin(2*np.pi*half_freq_modulation*time)
     
-    >>> freqs = cyclic_sd(x=x, y=x, fs=fs, alpha=0)[0]
+    >>> freqs = signal.cyclic_sd(x=x, y=x, fs=fs, alpha=0)[0]
     >>> alpha = np.arange(1, 100)
     >>> Sx_f_alpha = np.empty((freqs.size, alpha.size), dtype=np.complex128)
     
     >>> for i_alpha, alpha_i in enumerate(alpha):
-    >>>     Sx_f_alpha[:, i_alpha] = cyclic_sd(x=x, y=x, fs=fs, alpha=alpha_i)[1]
+    >>>     Sx_f_alpha[:, i_alpha] = signal.cyclic_sd(x=x, y=x, fs=fs, alpha=alpha_i)[1]
         
     >>> Sx_f_alpha = Sx_f_alpha[freqs >= 0, :]
     >>> freqs = freqs[freqs >= 0]
