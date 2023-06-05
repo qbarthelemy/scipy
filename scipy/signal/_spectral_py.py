@@ -1592,10 +1592,11 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     fs : float, optional
         Sampling frequency of the `x` and `y` time series. Defaults to 16.
     alpha : float, optional
-        Modulation frequency of the `x` and `y` time series. Defaults to 4.
+        Cyclic / modulation frequency of the `x` and `y` time series. Defaults
+        to 4.
     sym : bool, optional
-        Choice between the symmetric version: E{Y(f+alpha/2)X*(f-alpha/2)}, and the
-        asymmetric one: E{Y(f)X*(f-alpha)}.
+        Choice between the symmetric version: E{Y(f+alpha/2)X*(f-alpha/2)}, and
+        the asymmetric one: E{Y(f)X*(f-alpha)}.
     window : str or tuple or array_like, optional
         Desired window to use. If `window` is a string or tuple, it is
         passed to `get_window` to generate the window values, which are
@@ -1673,40 +1674,55 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
 
     Examples
     --------
-    >>> import numpy as np
-    >>> from scipy import signal
+    >>> from scipy.signal import cyclic_sd
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
-    
-    Generate a test signal with some common features.
-    
-    >>> fs = 1e4
-    >>> N = 1e5
-    >>> freq_carrier = 1234.0
-    >>> half_freq_modulation = 28.0 # the modulation is expected to occur at a double frequency 28 * 2 = 56
+
+    Generate a signal resulting from amplitude modulation, using a carrier
+    frequency.
+
+    >>> n_times, fs = 1e5, 1e4
+    >>> f_carrier, f_sig = 1214, 28
+    >>> time = np.arange(n_times) / fs
+    >>> x = np.sin(2*np.pi*f_carrier*time) * np.sin(2*np.pi*f_sig*time)
+
+    >>> fig, ax = plt.subplots()
+    >>> plt.plot(time[:400], x[:400])
+    >>> plt.xlabel("Time (in s)")
+    >>> plt.ylabel("Signal amplitude")
+    >>> plt.show()
+
+    Add a noise.
+
     >>> noise_power = 10
-    >>> time = np.arange(N) / fs
-    >>> x = rng.normal(scale=np.sqrt(noise_power), size=time.shape)
-    >>> x += np.sin(2*np.pi*freq_carrier*time)*np.sin(2*np.pi*half_freq_modulation*time)
-    
-    >>> freqs = signal.cyclic_sd(x=x, y=x, fs=fs, alpha=0)[0]
-    >>> alpha = np.arange(1, 100)
-    >>> Sx_f_alpha = np.empty((freqs.size, alpha.size), dtype=np.complex128)
-    
-    >>> for i_alpha, alpha_i in enumerate(alpha):
-    >>>     Sx_f_alpha[:, i_alpha] = signal.cyclic_sd(x=x, y=x, fs=fs, alpha=alpha_i)[1]
-        
-    >>> Sx_f_alpha = Sx_f_alpha[freqs >= 0, :]
-    >>> freqs = freqs[freqs >= 0]
-    
-    >>> plt.pcolormesh(alpha, freqs, np.abs(Sx_f_alpha))
-    >>> plt.xlabel('Carrier Frequency [Hz]')
-    >>> plt.xlabel('Modulation Frequency [Hz]')
+    >>> x += rng.normal(scale=np.sqrt(noise_power), size=x.shape)
+
+    >>> fig, ax = plt.subplots()
+    >>> plt.plot(time[:400], x[:400])
+    >>> plt.xlabel("Time (in s)")
+    >>> plt.ylabel("Signal+noise amplitude")
+    >>> plt.show()
+
+    >>> freqs = cyclic_sd(x=x, y=x, fs=fs, alpha=0)[0]
+    >>> alphas = np.arange(1, 100)
+    >>> scd = np.empty((freqs.size, alphas.size), dtype=np.complex64)
+    >>> for i, alpha in enumerate(alphas):
+    >>>     scd[:, i] = cyclic_sd(x=x, y=x, fs=fs, alpha=alpha)[1]
+
+    The modulation is expected to occur twice the frequency f_sig, ie 56 Hz.
+
+    >>> foi = (freqs >= 0) & (freqs <= 2000)
+    >>> scd, freqs = scd[foi], freqs[foi]
+
+    >>> fig, ax = plt.subplots()
+    >>> plt.pcolormesh(alphas, freqs, np.abs(scd))
+    >>> plt.ylabel('Carrier frequency (in Hz)')
+    >>> plt.xlabel('Cyclic / modulation frequency (in Hz)')
     >>> plt.show()
     """
 
     if alpha > fs / 2:
-        raise ValueError('Modulation frequency must be inferior to Nyquist '
+        raise ValueError('Cyclic frequency must be inferior to Nyquist '
                          'frequency, got %s' % (alpha,))
 
     if sym:
