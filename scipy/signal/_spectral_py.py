@@ -1683,7 +1683,7 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     >>> n_times, fs = 1e5, 1e4
     >>> f_carrier, f_sig = 1214, 28
     >>> time = np.arange(n_times) / fs
-    >>> x = np.sin(2*np.pi*f_carrier*time) * np.sin(2*np.pi*f_sig*time)
+    >>> x = np.sin(2*np.pi*f_carrier*time) * (1 + np.sin(2*np.pi*f_sig*time))
 
     >>> fig, ax = plt.subplots()
     >>> plt.plot(time[:400], x[:400])
@@ -1707,8 +1707,6 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     >>> scd = np.empty((freqs.size, alphas.size), dtype=np.complex64)
     >>> for i, alpha in enumerate(alphas):
     >>>     scd[:, i] = cyclic_sd(x=x, y=x, fs=fs, alpha=alpha)[1]
-
-    The modulation is expected to occur twice the frequency f_sig, ie 56 Hz.
 
     >>> foi = (freqs >= 0) & (freqs <= 2000)
     >>> scd, freqs = scd[foi], freqs[foi]
